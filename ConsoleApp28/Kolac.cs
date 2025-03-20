@@ -11,6 +11,7 @@ namespace ConsoleApp28
         private string naziv, vrsta;
         private int tezina;
         private bool dekoracija, dostava;
+        public double Cena { get; set; }
 
         // Konstruktor
         public Kolac(string naziv, string vrsta, int tezina, bool dekoracija, bool dostava)

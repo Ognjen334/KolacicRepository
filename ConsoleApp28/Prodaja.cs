@@ -1,33 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApp28
 {
+    // Klasa "Prodaja" implementira interfejs "IPoslasticarnica" i modelira proces prodaje kolača
     internal class Prodaja : IPoslasticarnica
     {
-        
-    
+        // Privatna lista koja sadrži naručene kolače
         private List<Kolac> kolaci;
+
+        // Ukupna cena svih kolača u narudžbini
         private double cena;
+
+        // Tip narudžbine (može biti npr. "Restoran" ili "Pojedinačna kupovina")
         private string porudzbina;
+
+        // Sertifikat je potreban ako je porudžbina namenjena restoranu
         private bool sertifikat;
 
+        // Javni svojstvo koje omogućava pristup listi kolača
         public List<Kolac> Kolaci => kolaci;
 
+        // Svojstvo koje omogućava čitanje ukupne cene
         public double Cena
         {
             get { return cena; }
-            private set { cena = value; }
+            private set { cena = value; } // Postavljanje cene može samo unutar klase
         }
 
+        // Svojstvo za tip porudžbine
         public string Porudzbina
         {
             get { return porudzbina; }
             set
             {
+                // Ako je porudžbina za restoran, mora postojati sertifikat
                 if (value == "Restoran" && !sertifikat)
                 {
                     throw new Exception("Za restoran je potreban sertifikat!");
@@ -36,119 +43,91 @@ namespace ConsoleApp28
             }
         }
 
+        // Svojstvo koje postavlja ili vraća sertifikat
         public bool Sertifikat
         {
             get { return sertifikat; }
             set
             {
+                // Ako je porudžbina za restoran, sertifikat mora biti postavljen
                 if (porudzbina == "Restoran" && !value)
                 {
-                    throw new Exception("Za restoran je obavezan sertifikat!");
+                    throw new Exception("Sertifikat je obavezan za restoran!");
                 }
                 sertifikat = value;
             }
         }
 
-        // Podrazumevani konstruktor
-        public Prodaja()
+        // Konstruktor klase koji inicijalizuje listu kolača i postavlja vrednosti svojstava
+        public Prodaja(string porudzbina, bool sertifikat)
         {
-            kolaci = new List<Kolac>();
-            cena = 0;
-            porudzbina = "";
-            sertifikat = false;
+            this.kolaci = new List<Kolac>(); // Kreiramo praznu listu kolača
+            this.porudzbina = porudzbina;
+            this.sertifikat = sertifikat;
+            this.cena = 0; // Početna cena je 0
         }
 
-        // Indekser za pristup kolačima
+        // Indeksator koji omogućava direktan pristup kolačima u listi pomoću indeksa
         public Kolac this[int index]
         {
-            get
+            get { return kolaci[index]; }
+            set { kolaci[index] = value; }
+        }
+
+        // Metoda koja sortira listu kolača po dekoraciji i ispisuje ih
+        public void IspisiSortirajPoDekoraciji(IComparer<Kolac> comparer = null)
+        {
+            if (comparer == null)
             {
-                if (index < 0 || index >= kolaci.Count)
-                    throw new IndexOutOfRangeException("Nevalidan indeks!");
-                return kolaci[index];
+                // Ako nije prosleđen poseban kriterijum sortiranja, sortiramo po dekoraciji
+                kolaci.Sort((a, b) => a.Dekoracija.CompareTo(b.Dekoracija));
+            }
+            else
+            {
+                // Ako je prosleđen drugi kriterijum, koristimo njega
+                kolaci.Sort(comparer);
+            }
+
+            // Ispisujemo sortiranu listu kolača
+            foreach (var kolac in kolaci)
+            {
+                Console.WriteLine(kolac);
             }
         }
 
-        // Implementacija metoda interfejsa
+        // Implementacija metoda interfejsa IPoslasticarnica
+
+        // Dodaje kolač u listu i povećava ukupnu cenu
         public void PoruciKolac(Kolac k)
         {
-            if (kolaci.Count >= 5)
-            {
-                throw new Exception("Nije moguće dodati više od 5 kolača!");
-            }
             kolaci.Add(k);
+            cena += k.Cena;
+            Console.WriteLine($"Dodali ste kolač: {k.Naziv}, cena: {k.Cena} RSD.");
         }
 
+        // Ispisuje detalje o porudžbini, uključujući sve kolače i ukupnu cenu
         public void Porudzbenica()
         {
-            Console.WriteLine("Poručeni kolači:");
-            foreach (var k in kolaci)
+            Console.WriteLine("=== Porudžbenica ===");
+            foreach (var kolac in kolaci)
             {
-                Console.WriteLine(k);
+                Console.WriteLine($"- {kolac.Naziv}: {kolac.Cena} RSD");
             }
+            Console.WriteLine($"Ukupna cena: {cena} RSD");
         }
 
+        // Vraća ukupnu cenu svih kolača
         public double CenaKolaca()
         {
-            double osnovnaCena = kolaci.Sum(k => Cena);
-
-            if (porudzbina == "Restoran")
-            {
-                if (sertifikat)
-                    return osnovnaCena * 1.3; // +30% uz sertifikat
-                return osnovnaCena * 1.2; // +20% bez sertifikata
-            }
-            else if (porudzbina == "Kuca" && sertifikat)
-            {
-                return osnovnaCena * 1.1; // +10% uz sertifikat
-            }
-
-            return osnovnaCena;
+            return cena;
         }
 
+        // Otkazuje porudžbinu, briše sve kolače i resetuje cenu
         public void OdustajanjeOdPorudzbine()
         {
-            kolaci.Clear();
-        }
-
-        // Metod za LINQ upit - filtriranje i sortiranje kolača
-        public void Upit()
-        {
-            var filtriraniKolaci = kolaci
-                .Where(k => porudzbina == "Restoran" && k.Tezina > 1200)
-                .OrderBy(k => k.Naziv)
-                .ToList();
-
-            Console.WriteLine("Kolači teži od 1200g sortirani po nazivu:");
-            foreach (var k in filtriraniKolaci)
-            {
-                Console.WriteLine(k);
-            }
-        }
-
-        // Metod za sortiranje koristeći IComparer
-        public void IspisiSortirajPoDekoraciji(IComparer<Kolac> comparer)
-        {
-            kolaci.Sort(comparer);
-            Console.WriteLine("Kolači sortirani prema dekoraciji:");
-            foreach (var k in kolaci)
-            {
-                Console.WriteLine(k);
-            }
+            kolaci.Clear(); // Brišemo sve kolače iz liste
+            cena = 0; // Resetujemo cenu
+            Console.WriteLine("Porudžbina je otkazana.");
         }
     }
-
-
-
-
-
-
-
-
 }
-
-
-
-
-
-
